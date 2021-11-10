@@ -49,40 +49,56 @@ describe("Crop Farm", () => {
 
   describe("Staking", async () => {
     it("Should fail to stake zero dai", async () => {
-      let toTransfer = 0;
+      let depositAmount = 0;
 
       expect(
-        cropFarmContract.connect(account1).stake(toTransfer)
+        cropFarmContract.connect(account1).stake(depositAmount)
       ).to.be.revertedWith("You cannot stake zero dai");
     });
 
     it("Should fail if insufficient dai", async () => {
-      let toTransfer = daiAmount.add("10");
+      let depositAmount = daiAmount.add("10");
 
       await mockDaiContract
         .connect(account1)
-        .approve(cropFarmContract.address, toTransfer);
+        .approve(cropFarmContract.address, depositAmount);
 
       expect(
-        cropFarmContract.connect(account1).stake(toTransfer)
+        cropFarmContract.connect(account1).stake(depositAmount)
       ).to.be.revertedWith("You do not have enough DAI");
     });
 
     it("Deposit Single Stake", async () => {
-      let toTransfer = ethers.utils.parseEther("10");
+      let depositAmount = ethers.utils.parseEther("10");
       await mockDaiContract
         .connect(account1)
-        .approve(cropFarmContract.address, toTransfer);
+        .approve(cropFarmContract.address, depositAmount);
 
       expect(await cropFarmContract.isStaking(account1.address)).to.eq(false);
 
-      expect(await cropFarmContract.connect(account1).stake(toTransfer)).to.be
-        .ok;
+      expect(await cropFarmContract.connect(account1).stake(depositAmount)).to
+        .be.ok;
 
       expect(await cropFarmContract.isStaking(account1.address)).to.eq(true);
 
       expect(await cropFarmContract.stakingBalance(account1.address)).to.eq(
-        toTransfer
+        depositAmount
+      );
+    });
+
+    it("Deposit Multi Stake", async () => {
+      let depositAmount = ethers.utils.parseEther("10");
+      const depositAmountTotal = ethers.utils.parseEther("20");
+
+      await mockDaiContract
+        .connect(account1)
+        .approve(cropFarmContract.address, depositAmountTotal);
+
+      await cropFarmContract.connect(account1).stake(depositAmount);
+      await cropFarmContract.connect(account1).stake(depositAmount);
+
+      expect(await cropFarmContract.stakingBalance(account1.address)).to.eq(
+        depositAmountTotal
       );
     });
   });

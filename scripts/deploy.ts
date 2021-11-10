@@ -1,18 +1,23 @@
 import { BigNumber } from "ethers";
 import { ethers } from "hardhat";
+import {
+  CropFarm__factory,
+  CropToken__factory,
+  ERC20Mock__factory,
+} from "../typechain";
 
 async function main() {
-  const [ownerAccount] = await ethers.getSigners();
+  const [owner] = await ethers.getSigners();
   const daiAmount: BigNumber = ethers.utils.parseEther("1000");
 
-  const MockDai = await ethers.getContractFactory("ERC20Mock");
-  const CropToken = await ethers.getContractFactory("CropToken");
-  const CropFarm = await ethers.getContractFactory("CropFarm");
+  const MockDai = new ERC20Mock__factory(owner);
+  const CropToken = new CropToken__factory(owner);
+  const CropFarm = new CropFarm__factory(owner);
 
   const mockDaiContract = await MockDai.deploy(
     "MockDai",
     "mDai",
-    ownerAccount.address,
+    owner.address,
     daiAmount
   );
 

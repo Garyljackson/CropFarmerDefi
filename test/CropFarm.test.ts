@@ -2,30 +2,37 @@ import { expect } from "chai";
 import { ethers } from "hardhat";
 import { BigNumber } from "ethers";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
-import { CropFarm, CropToken, ERC20Mock } from "../typechain";
+import {
+  CropFarm,
+  CropFarm__factory,
+  CropToken,
+  CropToken__factory,
+  ERC20Mock,
+  ERC20Mock__factory,
+} from "../typechain";
 
 describe("Crop Farm", () => {
   let mockDaiContract: ERC20Mock;
   let cropTokenContract: CropToken;
   let cropFarmContract: CropFarm;
 
-  let ownerAccount: SignerWithAddress;
+  let owner: SignerWithAddress;
   let account1: SignerWithAddress;
   let account2: SignerWithAddress;
 
   const daiAmount: BigNumber = ethers.utils.parseEther("1000");
 
   beforeEach(async () => {
-    [ownerAccount, account1, account2] = await ethers.getSigners();
+    [owner, account1, account2] = await ethers.getSigners();
 
-    const MockDai = await ethers.getContractFactory("ERC20Mock");
-    const CropToken = await ethers.getContractFactory("CropToken");
-    const CropFarm = await ethers.getContractFactory("CropFarm");
+    const MockDai = new ERC20Mock__factory(owner);
+    const CropToken = new CropToken__factory(owner);
+    const CropFarm = new CropFarm__factory(owner);
 
     mockDaiContract = await MockDai.deploy(
       "MockDai",
       "mDai",
-      ownerAccount.address,
+      owner.address,
       daiAmount
     );
 

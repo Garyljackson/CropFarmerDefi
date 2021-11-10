@@ -26,7 +26,7 @@ contract CropFarm is Context {
     }
 
     function stake(uint256 amount) public {
-        require(amount > 0, "You cannot stake zero");
+        require(amount > 0, "You cannot stake zero dai");
         require(
             daiToken.balanceOf(_msgSender()) >= amount,
             "You do not have enough DAI"

@@ -48,7 +48,27 @@ describe("Crop Farm", () => {
   });
 
   describe("Staking", async () => {
-    it("", async () => {
+    it("Should fail to stake zero dai", async () => {
+      let toTransfer = 0;
+
+      expect(
+        cropFarmContract.connect(account1).stake(toTransfer)
+      ).to.be.revertedWith("You cannot stake zero dai");
+    });
+
+    it("Should fail if insufficient dai", async () => {
+      let toTransfer = daiAmount.add("10");
+
+      await mockDaiContract
+        .connect(account1)
+        .approve(cropFarmContract.address, toTransfer);
+
+      expect(
+        cropFarmContract.connect(account1).stake(toTransfer)
+      ).to.be.revertedWith("You do not have enough DAI");
+    });
+
+    it("Deposit Single Stake", async () => {
       let toTransfer = ethers.utils.parseEther("10");
       await mockDaiContract
         .connect(account1)

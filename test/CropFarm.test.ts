@@ -1,19 +1,22 @@
 import { expect } from "chai";
 import { ethers } from "hardhat";
-import { Contract, BigNumber } from "ethers";
+import { BigNumber } from "ethers";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
+import { CropFarm, CropToken, ERC20Mock } from "../typechain";
 
 describe("Crop Farm", () => {
-  let mockDaiContract: Contract;
-  let cropTokenContract: Contract;
-  let cropFarmContract: Contract;
+  let mockDaiContract: ERC20Mock;
+  let cropTokenContract: CropToken;
+  let cropFarmContract: CropFarm;
 
-  let ownerSigner: SignerWithAddress;
-  let account1Signer: SignerWithAddress;
-  let account2Signer: SignerWithAddress;
+  let ownerAccount: SignerWithAddress;
+  let account1: SignerWithAddress;
+  let account2: SignerWithAddress;
+
+  const daiAmount: BigNumber = ethers.utils.parseEther("1000");
 
   beforeEach(async () => {
-    [ownerSigner, account1Signer, account2Signer] = await ethers.getSigners();
+    [ownerAccount, account1, account2] = await ethers.getSigners();
 
     const MockDai = await ethers.getContractFactory("ERC20Mock");
     const CropToken = await ethers.getContractFactory("CropToken");
@@ -22,8 +25,8 @@ describe("Crop Farm", () => {
     mockDaiContract = await MockDai.deploy(
       "MockDai",
       "mDai",
-      ownerSigner.address,
-      1000
+      ownerAccount.address,
+      daiAmount
     );
 
     cropTokenContract = await CropToken.deploy();
@@ -32,7 +35,35 @@ describe("Crop Farm", () => {
       mockDaiContract.address,
       cropTokenContract.address
     );
+
+    await Promise.all([
+      mockDaiContract.mint(account1.address, daiAmount),
+      mockDaiContract.mint(account2.address, daiAmount),
+    ]);
   });
 
-  it("Does Something", async () => {});
+  it("Can Deploy", async () => {
+    expect(cropFarmContract).to.be.ok;
+    expect(await cropFarmContract.name()).to.equal("CropFarm");
+  });
+
+  describe("Staking", async () => {
+    it("", async () => {
+      let toTransfer = ethers.utils.parseEther("10");
+      await mockDaiContract
+        .connect(account1)
+        .approve(cropFarmContract.address, toTransfer);
+
+      expect(await cropFarmContract.isStaking(account1.address)).to.eq(false);
+
+      expect(await cropFarmContract.connect(account1).stake(toTransfer)).to.be
+        .ok;
+
+      expect(await cropFarmContract.isStaking(account1.address)).to.eq(true);
+
+      expect(await cropFarmContract.stakingBalance(account1.address)).to.eq(
+        toTransfer
+      );
+    });
+  });
 });

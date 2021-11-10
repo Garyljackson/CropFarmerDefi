@@ -8,7 +8,8 @@ describe("CropToken", () => {
 
     await cropToken.deployed();
 
-    expect(await cropToken.name()).to.equal("Crop Token");
-    expect(await cropToken.symbol()).to.equal("CROP");
+    expect(cropToken).to.be.ok;
+    expect(await cropToken.name()).to.eq("Crop Token");
+    expect(await cropToken.symbol()).to.eq("CROP");
   });
 });

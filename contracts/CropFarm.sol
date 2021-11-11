@@ -6,10 +6,16 @@ import "@openzeppelin/contracts/utils/Context.sol";
 import "./CropToken.sol";
 
 contract CropFarm is Context {
-    mapping(address => uint256) public stakingBalance;
-    mapping(address => bool) public isStaking;
-    mapping(address => uint256) public startTime;
-    mapping(address => uint256) public cropBalance;
+    mapping(address => StakeDetails) public farmerStakeDetails;
+
+    struct StakeDetails {
+        uint256 stakingBalance;
+        bool isStaking;
+        uint256 startTime;
+        uint256 cropBalance;
+    }
+
+    address[] private allFarmers;
 
     string public name = "CropFarm";
 
@@ -36,23 +42,31 @@ contract CropFarm is Context {
 
         daiToken.transferFrom(_msgSender(), address(this), amount);
 
-        stakingBalance[_msgSender()] += amount;
-        isStaking[_msgSender()] = true;
+        farmerStakeDetails[_msgSender()].stakingBalance += amount;
+
+        if (farmerStakeDetails[_msgSender()].isStaking == false) {
+            allFarmers.push(_msgSender());
+            farmerStakeDetails[_msgSender()].isStaking = true;
+        }
+
         emit Stake(_msgSender(), amount);
     }
 
     function unstake(uint256 amount) public {
-        require(isStaking[_msgSender()], "Nothing to unstake");
         require(
-            stakingBalance[_msgSender()] >= amount,
+            farmerStakeDetails[_msgSender()].isStaking,
+            "Nothing to unstake"
+        );
+        require(
+            farmerStakeDetails[_msgSender()].stakingBalance >= amount,
             "Unstake amount exceeds stake"
         );
 
         updateCurrentStakeYield(_msgSender());
 
-        stakingBalance[_msgSender()] -= amount;
-        if (stakingBalance[_msgSender()] == 0) {
-            isStaking[_msgSender()] = false;
+        farmerStakeDetails[_msgSender()].stakingBalance -= amount;
+        if (farmerStakeDetails[_msgSender()].stakingBalance == 0) {
+            farmerStakeDetails[_msgSender()].isStaking = false;
         }
 
         daiToken.transfer(_msgSender(), amount);
@@ -61,7 +75,7 @@ contract CropFarm is Context {
 
     function withdrawYield() public {
         updateCurrentStakeYield(_msgSender());
-        uint256 toTransfer = cropBalance[_msgSender()];
+        uint256 toTransfer = farmerStakeDetails[_msgSender()].cropBalance;
 
         require(toTransfer > 0, "Nothing to withdraw");
 
@@ -69,12 +83,19 @@ contract CropFarm is Context {
         emit YieldWithdraw(_msgSender(), toTransfer);
     }
 
-    function updateCurrentStakeYield(address farmer) private {
-        if (isStaking[farmer]) {
-            uint256 yield = calculateYield(_msgSender());
-            cropBalance[_msgSender()] += yield;
+    function updateAllYields() public {
+        for (uint256 i = 0; i <= allFarmers.length - 1; i++) {
+            updateCurrentStakeYield(allFarmers[i]);
         }
-        startTime[_msgSender()] = block.timestamp;
+    }
+
+    function updateCurrentStakeYield(address farmer) private {
+        if (farmerStakeDetails[farmer].isStaking) {
+            uint256 yield = calculateYield(_msgSender());
+            farmerStakeDetails[farmer].cropBalance += yield;
+        }
+
+        farmerStakeDetails[farmer].startTime = block.timestamp;
     }
 
     function calculateYield(address farmer) private view returns (uint256) {
@@ -86,7 +107,7 @@ contract CropFarm is Context {
 
     function calculateTimeSpan(address farmer) private view returns (uint256) {
         uint256 endTime = block.timestamp;
-        uint256 totalTime = endTime - startTime[farmer];
+        uint256 totalTime = endTime - farmerStakeDetails[farmer].startTime;
         return totalTime;
     }
 

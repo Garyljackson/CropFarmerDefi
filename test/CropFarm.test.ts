@@ -30,9 +30,7 @@ describe("Crop Farm", () => {
     const CropFarm = new CropFarm__factory(owner);
 
     mockDaiContract = await MockDai.deploy("MockDai", "mDai", owner.address, daiAmount);
-
     cropTokenContract = await CropToken.deploy();
-
     cropFarmContract = await CropFarm.deploy(mockDaiContract.address, cropTokenContract.address);
 
     await Promise.all([
@@ -63,14 +61,12 @@ describe("Crop Farm", () => {
 
     it("Deposit Single Stake", async () => {
       let depositAmount = ethers.utils.parseEther("10");
+
       await mockDaiContract.connect(account1).approve(cropFarmContract.address, depositAmount);
 
       expect((await cropFarmContract.farmerStakeDetails(account1.address)).isStaking).to.eq(false);
-
       expect(await cropFarmContract.connect(account1).stake(depositAmount)).to.be.ok;
-
       expect((await cropFarmContract.farmerStakeDetails(account1.address)).isStaking).to.eq(true);
-
       expect((await cropFarmContract.farmerStakeDetails(account1.address)).stakingBalance).to.eq(depositAmount);
     });
 
@@ -79,7 +75,6 @@ describe("Crop Farm", () => {
       const depositAmountTotal = ethers.utils.parseEther("20");
 
       await mockDaiContract.connect(account1).approve(cropFarmContract.address, depositAmountTotal);
-
       await cropFarmContract.connect(account1).stake(depositAmount);
       await cropFarmContract.connect(account1).stake(depositAmount);
 
@@ -98,7 +93,6 @@ describe("Crop Farm", () => {
       const withdrawAmount = depositAmount.add("1");
 
       await mockDaiContract.connect(account1).approve(cropFarmContract.address, depositAmount);
-
       await cropFarmContract.connect(account1).stake(depositAmount);
 
       expect(cropFarmContract.connect(account1).unstake(withdrawAmount)).to.be.revertedWith(
@@ -110,10 +104,11 @@ describe("Crop Farm", () => {
       const depositAmount = ethers.utils.parseEther("100");
 
       await mockDaiContract.connect(account1).approve(cropFarmContract.address, depositAmount);
-
       await cropFarmContract.connect(account1).stake(depositAmount);
+      await cropFarmContract.connect(account1).unstake(depositAmount);
 
-      expect((await cropFarmContract.farmerStakeDetails(account1.address)).stakingBalance).to.be.eq(depositAmount);
+      expect((await cropFarmContract.farmerStakeDetails(account1.address)).stakingBalance).to.be.eq(0);
+      expect((await cropFarmContract.farmerStakeDetails(account1.address)).isStaking).to.eq(false);
     });
 
     it("Can unstake partial amount", async () => {
@@ -126,6 +121,7 @@ describe("Crop Farm", () => {
       await cropFarmContract.connect(account1).unstake(withdrawAmount);
 
       expect((await cropFarmContract.farmerStakeDetails(account1.address)).stakingBalance).to.be.eq(amountDiff);
+      expect((await cropFarmContract.farmerStakeDetails(account1.address)).isStaking).to.eq(true);
     });
 
     it("Returns unstaked amount to address", async () => {

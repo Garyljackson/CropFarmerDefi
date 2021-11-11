@@ -42,9 +42,10 @@ contract CropFarm is Context {
     }
 
     function unstake(uint256 amount) public {
+        require(isStaking[_msgSender()], "Nothing to unstake");
         require(
-            isStaking[_msgSender()] && stakingBalance[_msgSender()] >= amount,
-            "Nothing to unstake"
+            stakingBalance[_msgSender()] >= amount,
+            "Unstake amount exceeds stake"
         );
 
         updateCurrentStakeYield(_msgSender());

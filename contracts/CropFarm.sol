@@ -65,7 +65,6 @@ contract CropFarm is Context {
     }
 
     function withdrawYield() public {
-        updateCurrentStakeYield(_msgSender());
         uint256 toTransfer = farmerStakeDetails[_msgSender()].cropBalance;
 
         require(toTransfer > 0, "Nothing to withdraw");
@@ -89,7 +88,7 @@ contract CropFarm is Context {
 
     function updateCurrentStakeYield(address farmer) private {
         if (farmerStakeDetails[farmer].isStaking) {
-            uint256 yield = calculateYield(_msgSender());
+            uint256 yield = calculateYield(farmer);
             farmerStakeDetails[farmer].cropBalance += yield;
         }
 

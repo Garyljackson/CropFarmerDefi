@@ -2,6 +2,7 @@ import { expect } from "chai";
 import { ethers } from "hardhat";
 import { BigNumber } from "ethers";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
+import { time } from "@openzeppelin/test-helpers";
 import {
   CropFarm,
   CropFarm__factory,
@@ -65,8 +66,11 @@ describe("Crop Farm", () => {
       await mockDaiContract.connect(account1).approve(cropFarmContract.address, depositAmount);
 
       expect((await cropFarmContract.farmerStakeDetails(account1.address)).isStaking).to.eq(false);
-      expect(await cropFarmContract.connect(account1).stake(depositAmount)).to.be.ok;
+
+      await cropFarmContract.connect(account1).stake(depositAmount);
+
       expect((await cropFarmContract.farmerStakeDetails(account1.address)).isStaking).to.eq(true);
+      expect((await cropFarmContract.farmerStakeDetails(account1.address)).startTime).to.be.gte(0);
       expect((await cropFarmContract.farmerStakeDetails(account1.address)).stakingBalance).to.eq(depositAmount);
     });
 
@@ -135,6 +139,24 @@ describe("Crop Farm", () => {
       await cropFarmContract.connect(account1).unstake(withdrawAmount);
 
       expect(await mockDaiContract.balanceOf(account1.address)).to.be.eq(initialDiaAmount.sub(amountDiff));
+    });
+  });
+
+  describe("Withdraw Yield", async () => {
+    beforeEach(async () => {
+      await cropTokenContract.grantRole(await cropTokenContract.MINTER_ROLE(), cropFarmContract.address);
+    });
+
+    it("Should calculate correct yield ", async () => {
+      const secondsPerDay = 24 * 60 * 60;
+      const depositAmount = ethers.utils.parseEther("100");
+
+      await mockDaiContract.connect(account1).approve(cropFarmContract.address, depositAmount);
+      await cropFarmContract.connect(account1).stake(depositAmount);
+
+      await time.increase(secondsPerDay);
+
+      await cropFarmContract.calculateYield(account1.address);
     });
   });
 });

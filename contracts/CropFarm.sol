@@ -33,10 +33,7 @@ contract CropFarm is Context {
 
     function stake(uint256 amount) public {
         require(amount > 0, "You cannot stake zero dai");
-        require(
-            daiToken.balanceOf(_msgSender()) >= amount,
-            "You do not have enough DAI"
-        );
+        require(daiToken.balanceOf(_msgSender()) >= amount, "You do not have enough DAI");
 
         updateCurrentStakeYield(_msgSender());
 
@@ -53,14 +50,8 @@ contract CropFarm is Context {
     }
 
     function unstake(uint256 amount) public {
-        require(
-            farmerStakeDetails[_msgSender()].isStaking,
-            "Nothing to unstake"
-        );
-        require(
-            farmerStakeDetails[_msgSender()].stakingBalance >= amount,
-            "Unstake amount exceeds stake"
-        );
+        require(farmerStakeDetails[_msgSender()].isStaking, "Nothing to unstake");
+        require(farmerStakeDetails[_msgSender()].stakingBalance >= amount, "Unstake amount exceeds stake");
 
         updateCurrentStakeYield(_msgSender());
 
@@ -89,6 +80,13 @@ contract CropFarm is Context {
         }
     }
 
+    function calculateYield(address farmer) public view returns (uint256) {
+        uint256 yieldTimeSeconds = calculateTimeSpan(farmer);
+        uint256 yieldRatePerSecond = calculateYieldRatePerSecond();
+        uint256 yieldTotal = yieldTimeSeconds * yieldRatePerSecond;
+        return yieldTotal;
+    }
+
     function updateCurrentStakeYield(address farmer) private {
         if (farmerStakeDetails[farmer].isStaking) {
             uint256 yield = calculateYield(_msgSender());
@@ -96,13 +94,6 @@ contract CropFarm is Context {
         }
 
         farmerStakeDetails[farmer].startTime = block.timestamp;
-    }
-
-    function calculateYield(address farmer) private view returns (uint256) {
-        uint256 yieldTimeSeconds = calculateTimeSpan(farmer);
-        uint256 yieldRatePerSecond = calculateYieldRatePerSecond();
-        uint256 yieldTotal = yieldTimeSeconds * yieldRatePerSecond;
-        return yieldTotal;
     }
 
     function calculateTimeSpan(address farmer) private view returns (uint256) {

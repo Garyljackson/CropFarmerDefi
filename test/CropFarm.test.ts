@@ -143,20 +143,58 @@ describe("Crop Farm", () => {
   });
 
   describe("Withdraw Yield", async () => {
-    beforeEach(async () => {
-      await cropTokenContract.grantRole(await cropTokenContract.MINTER_ROLE(), cropFarmContract.address);
-    });
+    let secondsPerDay: number;
+    let expectedYieldStart: BigNumber;
+    let expectedYieldEnd: BigNumber;
 
-    it("Should calculate correct yield ", async () => {
-      const secondsPerDay = 24 * 60 * 60;
+    beforeEach(async () => {
       const depositAmount = ethers.utils.parseEther("100");
+      secondsPerDay = 24 * 60 * 60;
+      expectedYieldStart = ethers.utils.parseEther("19");
+      expectedYieldEnd = ethers.utils.parseEther("21");
+
+      await cropTokenContract.grantRole(await cropTokenContract.MINTER_ROLE(), cropFarmContract.address);
 
       await mockDaiContract.connect(account1).approve(cropFarmContract.address, depositAmount);
       await cropFarmContract.connect(account1).stake(depositAmount);
 
+      await mockDaiContract.connect(account2).approve(cropFarmContract.address, depositAmount);
+      await cropFarmContract.connect(account2).stake(depositAmount);
+    });
+
+    it("Should calculate correct yield ", async () => {
       await time.increase(secondsPerDay);
 
-      await cropFarmContract.calculateYield(account1.address);
+      expect(await cropFarmContract.calculateYield(account1.address))
+        .to.be.gt(expectedYieldStart)
+        .and.to.be.lt(expectedYieldEnd);
+    });
+
+    it("Should update yield crop balance", async () => {
+      await time.increase(secondsPerDay);
+      await cropFarmContract.updateAllYields();
+
+      expect((await cropFarmContract.farmerStakeDetails(account1.address)).cropBalance)
+        .to.be.gt(expectedYieldStart)
+        .and.to.be.lt(expectedYieldEnd);
+
+      expect((await cropFarmContract.farmerStakeDetails(account2.address)).cropBalance)
+        .to.be.gt(expectedYieldStart)
+        .and.to.be.lt(expectedYieldEnd);
+    });
+
+    it("Should withdraw crop token yield to account", async () => {
+      await time.increase(secondsPerDay);
+      await cropFarmContract.updateAllYields();
+      await cropFarmContract.connect(account1).withdrawYield();
+
+      expect(await cropTokenContract.balanceOf(account1.address))
+        .to.be.gt(expectedYieldStart)
+        .and.to.be.lt(expectedYieldEnd);
+    });
+
+    it("Should fail if no yield available", async () => {
+      expect(cropFarmContract.connect(account1.address).withdrawYield()).to.be.revertedWith("Nothing to withdraw");
     });
   });
 });

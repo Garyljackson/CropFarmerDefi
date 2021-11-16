@@ -29,10 +29,14 @@ async function main() {
   );
   await cropTokenContract.deployed();
 
-  console.log(
-    "Crop Token Farm Contract deployed to:",
-    cropFarmContract.address
-  );
+
+  console.log(`Mock DAI: ${mockDaiContract.address}`);
+  console.log(`Crop Token: ${cropTokenContract.address}`);
+  console.log(`Crop Farm: ${cropFarmContract.address}`);
+  console.log(`npx hardhat verify ${mockDaiContract.address} "MockDai" "mDai" "${owner.address}" "${daiAmount}" --network ropsten`);
+  console.log(`npx hardhat verify --contract contracts/CropToken.sol:CropToken ${cropTokenContract.address} --network ropsten`);
+  console.log(`npx hardhat verify ${cropFarmContract.address} "${mockDaiContract.address}" "${cropTokenContract.address}" --network ropsten`);
+  
 }
 
 // We recommend this pattern to be able to use async/await everywhere

@@ -20,11 +20,12 @@ describe("Crop Farm", () => {
   let owner: SignerWithAddress;
   let account1: SignerWithAddress;
   let account2: SignerWithAddress;
+  let account3: SignerWithAddress;
 
   const daiAmount: BigNumber = ethers.utils.parseEther("1000");
 
   beforeEach(async () => {
-    [owner, account1, account2] = await ethers.getSigners();
+    [owner, account1, account2, account3] = await ethers.getSigners();
 
     const MockDai = new ERC20Mock__factory(owner);
     const CropToken = new CropToken__factory(owner);
@@ -170,6 +171,13 @@ describe("Crop Farm", () => {
         .and.to.be.lt(expectedYieldEnd);
     });
 
+    it("Should calculate zero yield for non stakers", async () => {
+      await time.increase(secondsPerDay);
+
+      expect(await cropFarmContract.calculateYield(account3.address))
+      .to.be.eq(0);
+    });
+
     it("Should update yield crop balance", async () => {
       await time.increase(secondsPerDay);
       await cropFarmContract.updateAllYields();
@@ -197,4 +205,5 @@ describe("Crop Farm", () => {
       expect(cropFarmContract.connect(account1.address).withdrawYield()).to.be.revertedWith("Nothing to withdraw");
     });
   });
+
 });

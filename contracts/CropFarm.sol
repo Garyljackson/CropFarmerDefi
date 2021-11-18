@@ -96,8 +96,14 @@ contract CropFarm is Context {
     }
 
     function calculateTimeSpan(address farmer) private view returns (uint256) {
+        uint256 farmStartTime = farmerStakeDetails[farmer].startTime;
+
+        if (farmStartTime == 0) {
+            return 0;
+        }
+
         uint256 endTime = block.timestamp;
-        uint256 totalTime = endTime - farmerStakeDetails[farmer].startTime;
+        uint256 totalTime = endTime - farmStartTime;
         return totalTime;
     }
 

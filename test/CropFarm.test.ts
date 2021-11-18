@@ -174,7 +174,7 @@ describe("Crop Farm", () => {
     it("Should calculate zero yield for non stakers", async () => {
       await time.increase(secondsPerDay);
 
-      expect(await cropFarmContract.calculateYield(account3.address))
+      expect(await cropFarm.calculateYield(account3.address))
       .to.be.eq(0);
     });
 
